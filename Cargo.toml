@@ -6,7 +6,7 @@ version = "0.3.0"
 edition = "2021"
 license = "Apache-2.0"
 documentation = "https://docs.rs/chain-registry/latest/chain-registry/"
-repository = "https://github.com/Cordtus/chain-registry"
+repository = "https://github.com/Cordtus/chain-registry-rust"
 readme = "README.md"
 
 [package.metadata.docs.rs]
