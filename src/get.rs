@@ -1,5 +1,5 @@
 use crate::github::Content;
-use eyre::{eyre, Context, Result};
+use eyre::{Context, Result};
 use http::{Method, StatusCode};
 use serde::de::DeserializeOwned;
 
@@ -8,7 +8,7 @@ pub use crate::{assets::*, chain::*, paths::*};
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 // In the future we may want to provide a way for a user to set the desired ref for the registry
 // module to use when querying.
-const GIT_REF: &str = "350840e766f7574a120760a13eda4c466413308a";
+const GIT_REF: &str = "e458ac19d3428e35f8b2ba634eb01ae1d359b46a"; // Updated: 2025-08-19
 const RAW_FILE_REPO_URL: &str = "https://raw.githubusercontent.com/cosmos/chain-registry";
 const REPO_URL: &str = "https://api.github.com/repos/cosmos/chain-registry/contents";
 
@@ -58,7 +58,10 @@ pub async fn get_assets(name: &str) -> Result<Option<AssetList>> {
     let path = format!("{}/assetlist.json", name);
     let data = get_file_content(GIT_REF, &path).await?;
 
-    Ok(parse_json(data).await)
+    match data {
+        Some(d) => Ok(parse_json(d).await),
+        None => Ok(None),
+    }
 }
 
 /// Retrieves the deserialized `chain.json` for a given chain. The result will contain
@@ -72,7 +75,10 @@ pub async fn get_chain(name: &str) -> Result<Option<ChainInfo>> {
     let path = format!("{}/chain.json", name);
     let data = get_file_content(GIT_REF, &path).await?;
 
-    Ok(parse_json(data).await)
+    match data {
+        Some(d) => Ok(parse_json(d).await),
+        None => Ok(None),
+    }
 }
 
 /// Retrieves the deserialized IBC path json for a given pair of chains. The result will contain
@@ -91,31 +97,33 @@ pub async fn get_path(chain_a: &str, chain_b: &str) -> Result<Option<IBCPath>> {
     );
     let data = get_file_content(GIT_REF, &path).await?;
 
-    Ok(parse_json(data).await)
+    match data {
+        Some(d) => Ok(parse_json(d).await),
+        None => Ok(None),
+    }
 }
 
-async fn get_file_content(r#ref: &str, path: &str) -> Result<String> {
+async fn get_file_content(r#ref: &str, path: &str) -> Result<Option<String>> {
     let url = format!("{}/{}/{}", RAW_FILE_REPO_URL, r#ref, path);
-    let response = reqwest::get(url).await?; //.text().await?
+    let response = reqwest::get(url).await?;
 
     if response.status() == StatusCode::NOT_FOUND {
-        return Err(eyre!("path {} not found", path));
+        return Ok(None);
     }
 
-    response
-        .text()
-        .await
-        .wrap_err("error getting remote file content")
+    Ok(Some(
+        response
+            .text()
+            .await
+            .wrap_err("error getting remote file content")?,
+    ))
 }
 
 async fn parse_json<T>(data: String) -> Option<T>
 where
-    T: core::fmt::Debug + DeserializeOwned,
+    T: DeserializeOwned,
 {
-    let result = serde_json::from_str(&data);
-    println!("{:?}", result);
-
-    result.ok()
+    serde_json::from_str(&data).ok()
 }
 
 #[cfg(test)]
@@ -127,13 +135,14 @@ mod tests {
     async fn gets_content_from_registry() {
         let result = get_file_content(GIT_REF, "cosmoshub/chain.json").await;
 
-        result.unwrap();
+        result.unwrap().unwrap();
     }
 
     #[assay]
     async fn parses_chain_info() {
         let result = get_file_content(GIT_REF, "cosmoshub/chain.json")
             .await
+            .unwrap()
             .unwrap();
         let result = parse_json::<ChainInfo>(result).await;
 
@@ -144,7 +153,7 @@ mod tests {
     async fn gets_chain() {
         let result = get_chain("cosmoshub").await;
 
-        result.unwrap();
+        result.unwrap().unwrap();
     }
 
     #[assay]
@@ -180,10 +189,10 @@ mod tests {
     }
 
     #[assay]
-    async fn get_path_not_present_errors() {
+    async fn get_path_not_present_returns_none() {
         let chain_a = "fake";
         let chain_b = "osmosis";
-        let result = get_path(chain_b, chain_a).await;
-        assert!(result.is_err())
+        let result = get_path(chain_b, chain_a).await.unwrap();
+        assert!(result.is_none())
     }
 }

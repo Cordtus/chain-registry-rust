@@ -1,3 +1,11 @@
+# 0.3.0
+
+- Update chain-registry git ref to latest (e458ac19d3428e35f8b2ba634eb01ae1d359b46a - 2025-08-19)
+- Fix error handling: nonexistent chains/paths now return `None` instead of errors
+- Remove debug output from parse_json
+- Add comprehensive integration tests
+- Add tokio as dev dependency for examples
+
 # 0.2.0-rc3
 
 - Remove `deny_unknown_fields` serde directive
