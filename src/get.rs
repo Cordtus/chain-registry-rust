@@ -15,14 +15,14 @@ async fn get(url: String) -> Result<String> {
     let client = reqwest::Client::new();
     let req = client
         .request(Method::GET, url)
-        .header("User-Agent", format!("ocular/{}", VERSION))
+        .header("User-Agent", format!("ocular/{VERSION}"))
         .build()?;
     Ok(client.execute(req).await?.text().await?)
 }
 
 /// Gets a list of chain names from the registry
 pub async fn list_chains() -> Result<Vec<String>> {
-    let url = format!("{}?ref={}", REPO_URL, GIT_REF);
+    let url = format!("{REPO_URL}?ref={GIT_REF}");
     let json: String = get(url).await?;
     let contents: Vec<Content> = serde_json::from_str(json.as_str())?;
 
@@ -35,7 +35,7 @@ pub async fn list_chains() -> Result<Vec<String>> {
 
 /// Gets a list of testnet chain names from the registry
 pub async fn list_testnets() -> Result<Vec<String>> {
-    let url = format!("{}/testnets?ref={}", REPO_URL, GIT_REF);
+    let url = format!("{REPO_URL}/testnets?ref={GIT_REF}");
     let json: String = get(url).await?;
     let contents: Vec<Content> = serde_json::from_str(json.as_str())?;
 
@@ -48,7 +48,7 @@ pub async fn list_testnets() -> Result<Vec<String>> {
 
 /// Gets a list of path names from the registry in the form <chain_a>-<chain_b>
 pub async fn list_paths() -> Result<Vec<String>> {
-    let url = format!("{}/_IBC?ref={}", REPO_URL, GIT_REF);
+    let url = format!("{REPO_URL}/_IBC?ref={GIT_REF}");
     let json: String = get(url).await?;
     let contents: Vec<Content> = serde_json::from_str(json.as_str())?;
 
@@ -65,9 +65,9 @@ pub async fn list_paths() -> Result<Vec<String>> {
 /// # Arguments
 ///
 /// * `name` - The chain name. Must match the name of the chain's folder in the root directory of the
-/// [chain registry](https://github.com/cosmos/chain-registry).
+///   [chain registry](https://github.com/cosmos/chain-registry).
 pub async fn get_assets(name: &str) -> Result<Option<AssetList>> {
-    let path = format!("{}/assetlist.json", name);
+    let path = format!("{name}/assetlist.json");
     let data = get_file_content(GIT_REF, &path).await?;
 
     match data {
@@ -82,9 +82,9 @@ pub async fn get_assets(name: &str) -> Result<Option<AssetList>> {
 /// # Arguments
 ///
 /// * `name` - The chain name. Must match the name of the chain's folder in the root directory of the
-/// [chain registry](https://github.com/cosmos/chain-registry).
+///   [chain registry](https://github.com/cosmos/chain-registry).
 pub async fn get_chain(name: &str) -> Result<Option<ChainInfo>> {
-    let path = format!("{}/chain.json", name);
+    let path = format!("{name}/chain.json");
     let data = get_file_content(GIT_REF, &path).await?;
 
     match data {
@@ -99,7 +99,7 @@ pub async fn get_chain(name: &str) -> Result<Option<ChainInfo>> {
 /// # Arguments
 ///
 /// * `name` - The chain name. Must match the name of the chain's folder in the root directory of the
-/// [chain registry](https://github.com/cosmos/chain-registry).
+///   [chain registry](https://github.com/cosmos/chain-registry).
 pub async fn get_path(chain_a: &str, chain_b: &str) -> Result<Option<IBCPath>> {
     // path names order the chain names alphabetically
     let path = format!(
@@ -116,7 +116,7 @@ pub async fn get_path(chain_a: &str, chain_b: &str) -> Result<Option<IBCPath>> {
 }
 
 async fn get_file_content(r#ref: &str, path: &str) -> Result<Option<String>> {
-    let url = format!("{}/{}/{}", RAW_FILE_REPO_URL, r#ref, path);
+    let url = format!("{RAW_FILE_REPO_URL}/{ref}/{path}");
     let response = reqwest::get(url).await?;
 
     if response.status() == StatusCode::NOT_FOUND {
