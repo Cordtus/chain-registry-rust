@@ -33,6 +33,19 @@ pub async fn list_chains() -> Result<Vec<String>> {
         .collect())
 }
 
+/// Gets a list of testnet chain names from the registry
+pub async fn list_testnets() -> Result<Vec<String>> {
+    let url = format!("{}/testnets?ref={}", REPO_URL, GIT_REF);
+    let json: String = get(url).await?;
+    let contents: Vec<Content> = serde_json::from_str(json.as_str())?;
+
+    Ok(contents
+        .iter()
+        .filter(|c| c.type_field == "dir" && !c.name.starts_with('_') && !c.name.starts_with('.'))
+        .map(|c| c.clone().name)
+        .collect())
+}
+
 /// Gets a list of path names from the registry in the form <chain_a>-<chain_b>
 pub async fn list_paths() -> Result<Vec<String>> {
     let url = format!("{}/_IBC?ref={}", REPO_URL, GIT_REF);
