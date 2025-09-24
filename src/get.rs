@@ -6,9 +6,8 @@ use serde::de::DeserializeOwned;
 pub use crate::{assets::*, chain::*, paths::*};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
-// In the future we may want to provide a way for a user to set the desired ref for the registry
-// module to use when querying.
-const GIT_REF: &str = "e458ac19d3428e35f8b2ba634eb01ae1d359b46a"; // Updated: 2025-08-19
+// Always use the master branch to get the latest registry data
+const GIT_REF: &str = "master";
 const RAW_FILE_REPO_URL: &str = "https://raw.githubusercontent.com/cosmos/chain-registry";
 const REPO_URL: &str = "https://api.github.com/repos/cosmos/chain-registry/contents";
 
@@ -23,7 +22,7 @@ async fn get(url: String) -> Result<String> {
 
 /// Gets a list of chain names from the registry
 pub async fn list_chains() -> Result<Vec<String>> {
-    let url = format!("{}?ref={}", REPO_URL, GIT_REF,);
+    let url = format!("{}?ref={}", REPO_URL, GIT_REF);
     let json: String = get(url).await?;
     let contents: Vec<Content> = serde_json::from_str(json.as_str())?;
 
@@ -36,7 +35,7 @@ pub async fn list_chains() -> Result<Vec<String>> {
 
 /// Gets a list of path names from the registry in the form <chain_a>-<chain_b>
 pub async fn list_paths() -> Result<Vec<String>> {
-    let url = format!("{}/_IBC?ref={}", REPO_URL, GIT_REF,);
+    let url = format!("{}/_IBC?ref={}", REPO_URL, GIT_REF);
     let json: String = get(url).await?;
     let contents: Vec<Content> = serde_json::from_str(json.as_str())?;
 
