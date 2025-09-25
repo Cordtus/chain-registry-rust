@@ -14,12 +14,16 @@ This crate is a maintained fork of the original [chain-registry](https://crates.
 
 ## Features
 
-- Models for serializing and deserializing chain.json, assets.json and IBC path JSON files
-- Simple get/list methods for retrieving chain, asset, and path data
-- A cache type (currently only supports IBC Path data) that exposes additional filtering options
-- Always fetches the latest chain-registry data from the master branch
-- Comprehensive error handling using `eyre`
-- Full test coverage
+- **Complete JSON Support**: Models for serializing/deserializing chain.json, assetlist.json, and IBC path JSON files
+- **Tolerant Deserialization**: Gracefully handles missing or unrecognized JSON fields, ensuring compatibility even as the registry evolves
+- **Simple API**: High-level get/list methods for retrieving chain, asset, and path data
+- **Advanced IBC Path Cache**: Comprehensive filtering and query capabilities for IBC paths:
+  - Filter by chain, channel ID, client ID, or custom tags
+  - Query paths between specific chains
+  - Efficient in-memory caching for long-running processes
+- **Always Current**: Automatically fetches the latest chain-registry data from the master branch
+- **Comprehensive Error Handling**: Uses `eyre` for detailed error context
+- **Full Test Coverage**: Thoroughly tested against the live registry
 
 ## Installation
 
@@ -32,11 +36,13 @@ cosmos-chain-registry = "0.3.0"
 
 ## Usage
 
+### Basic Usage
+
 ```rust
-use cosmos_chain_registry::*;
+use chain_registry::get::{get_chain, get_assets, get_path, list_chains};
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> eyre::Result<()> {
     // Get chain information
     let chain = get_chain("osmosis").await?.unwrap();
     println!("Chain ID: {}", chain.chain_id);
@@ -48,6 +54,37 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Get IBC path information
     let path = get_path("osmosis", "cosmoshub").await?.unwrap();
     println!("IBC Path: {}-{}", path.chain_1.chain_name, path.chain_2.chain_name);
+
+    // List all available chains
+    let chains = list_chains().await?;
+    println!("Found {} chains in the registry", chains.len());
+
+    Ok(())
+}
+```
+
+### Using the IBC Path Cache
+
+```rust
+use chain_registry::{cache::RegistryCache, paths::Tag};
+
+#[tokio::main]
+async fn main() -> eyre::Result<()> {
+    // Build the cache (fetches all IBC paths - may take a moment)
+    let cache = RegistryCache::try_new().await?;
+
+    // Get path between specific chains
+    let path = cache.get_path("osmosis", "cosmoshub").await?.unwrap();
+
+    // Get all paths for a specific chain
+    let osmosis_paths = cache.get_paths_for_chain("osmosis").await?;
+    println!("Osmosis has {} IBC connections", osmosis_paths.len());
+
+    // Filter paths by channel ID
+    let channel_paths = cache.get_paths_by_channel("channel-141").await?;
+
+    // Filter by custom tags
+    let dex_paths = cache.get_paths_filtered(Tag::Dex("osmosis".to_string())).await?;
 
     Ok(())
 }

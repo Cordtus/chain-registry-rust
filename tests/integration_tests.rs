@@ -1,6 +1,6 @@
-use chain_registry::get::*;
-use chain_registry::cache::RegistryCache;
-use chain_registry::paths::Tag;
+use cosmos_chain_registry::get::*;
+use cosmos_chain_registry::cache::RegistryCache;
+use cosmos_chain_registry::paths::Tag;
 
 #[tokio::test]
 async fn test_list_chains() {

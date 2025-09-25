@@ -5,8 +5,8 @@ use serde::Serialize;
 #[derive(Default, Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default, rename_all = "snake_case")]
 pub struct IBCPath {
-    #[serde(rename = "$schema")]
-    pub schema: String,
+    #[serde(rename = "$schema", skip_serializing_if = "Option::is_none")]
+    pub schema: Option<String>,
     pub chain_1: Chain1,
     pub chain_2: Chain2,
     pub channels: Vec<Channel>,
@@ -33,9 +33,12 @@ pub struct Chain2 {
 pub struct Channel {
     pub chain_1: ChannelChain1,
     pub chain_2: ChannelChain2,
-    pub ordering: String,
-    pub version: String,
-    pub tags: Tags,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ordering: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tags: Option<Tags>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -55,10 +58,14 @@ pub struct ChannelChain2 {
 #[derive(Default, Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default, rename_all = "snake_case")]
 pub struct Tags {
-    pub dex: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dex: Option<String>,
+    #[serde(default)]
     pub preferred: bool,
-    pub properties: String,
-    pub status: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
 }
 
 /// Represents an IBC path tag

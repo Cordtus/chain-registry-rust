@@ -1,7 +1,7 @@
 #![cfg(all(feature = "cache"))]
 #![cfg_attr(docsrs, doc(cfg(feature = "cache")))]
 use assay::assay;
-use chain_registry::{cache::RegistryCache, paths::Tag};
+use cosmos_chain_registry::{cache::RegistryCache, paths::Tag};
 
 #[assay]
 async fn registry_cache_happy_path() {

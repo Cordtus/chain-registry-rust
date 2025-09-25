@@ -1,4 +1,3 @@
-#![cfg(feature = "cache")]
 #![cfg_attr(docsrs, doc(cfg(feature = "cache")))]
 /// Provides caching of registry data for easy querying and filtering. It's recommended to populate the cache during the startup
 /// for a long-running process as construction involves sending an individual GET request for every path in the registry which
@@ -38,6 +37,49 @@ impl RegistryCache {
         Ok(self.paths.get(&path_name).cloned())
     }
 
+    /// Returns all cached [`IBCPath`]s involving a specific chain
+    pub async fn get_paths_for_chain(&self, chain_name: &str) -> Result<Vec<IBCPath>> {
+        Ok(self
+            .paths
+            .iter()
+            .filter(|(_, path)| {
+                path.chain_1.chain_name == chain_name || path.chain_2.chain_name == chain_name
+            })
+            .map(|(_, path)| path.to_owned())
+            .collect())
+    }
+
+    /// Returns all cached [`IBCPath`]s
+    pub fn get_all_paths(&self) -> Vec<IBCPath> {
+        self.paths.values().cloned().collect()
+    }
+
+    /// Returns paths containing a specific channel ID
+    pub async fn get_paths_by_channel(&self, channel_id: &str) -> Result<Vec<IBCPath>> {
+        Ok(self
+            .paths
+            .iter()
+            .filter(|(_, path)| {
+                path.channels.iter().any(|chan| {
+                    chan.chain_1.channel_id == channel_id || chan.chain_2.channel_id == channel_id
+                })
+            })
+            .map(|(_, path)| path.to_owned())
+            .collect())
+    }
+
+    /// Returns paths with a specific client ID
+    pub async fn get_paths_by_client(&self, client_id: &str) -> Result<Vec<IBCPath>> {
+        Ok(self
+            .paths
+            .iter()
+            .filter(|(_, path)| {
+                path.chain_1.client_id == client_id || path.chain_2.client_id == client_id
+            })
+            .map(|(_, path)| path.to_owned())
+            .collect())
+    }
+
     /// Returns cached [`IBCPath`] that match a provided [`Tag`]
     ///
     /// # Arguments
@@ -60,11 +102,19 @@ impl RegistryCache {
         Ok(self
             .paths
             .iter()
-            .filter(|kv| match &tag {
-                Tag::Dex(d) => kv.1.channels[0].tags.dex.eq(d),
-                Tag::Preferred(p) => kv.1.channels[0].tags.preferred.eq(p),
-                Tag::Properties(p) => kv.1.channels[0].tags.properties.eq(p),
-                Tag::Status(s) => kv.1.channels[0].tags.status.eq(s),
+            .filter(|kv| {
+                kv.1.channels.iter().any(|chan| {
+                    if let Some(tags) = &chan.tags {
+                        match &tag {
+                            Tag::Dex(d) => tags.dex.as_ref().is_some_and(|dex| dex.eq(d)),
+                            Tag::Preferred(p) => tags.preferred.eq(p),
+                            Tag::Properties(p) => tags.properties.as_ref().is_some_and(|props| props.eq(p)),
+                            Tag::Status(s) => tags.status.as_ref().is_some_and(|status| status.eq(s)),
+                        }
+                    } else {
+                        false
+                    }
+                })
             })
             .map(|kv| kv.1.to_owned())
             .collect())
