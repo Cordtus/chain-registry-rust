@@ -1,10 +1,10 @@
-# 0.5.0
+# 0.6.0
 
 - Add `get_grpc_endpoints`, `get_rest_endpoints`, and `get_rpc_endpoints` helpers for direct endpoint discovery
 - Modernize dependencies: `reqwest` 0.11 -> 0.12 (rustls), `http` 0.2 -> 1.0
 - Fix integration tests for current registry schema (ordered channels, `Option` fields, `ACTIVE` tag status)
 
-# 0.4.0
+# 0.5.0
 
 - Update chain-registry git ref to latest (e458ac19d3428e35f8b2ba634eb01ae1d359b46a - 2025-08-19)
 - Fix error handling: nonexistent chains/paths now return `None` instead of errors

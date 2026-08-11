@@ -31,7 +31,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-cosmos-chain-registry = "0.5.0"
+cosmos-chain-registry = "0.6.0"
 ```
 
 ## Usage
