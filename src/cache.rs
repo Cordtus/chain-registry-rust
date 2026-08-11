@@ -108,8 +108,12 @@ impl RegistryCache {
                         match &tag {
                             Tag::Dex(d) => tags.dex.as_ref().is_some_and(|dex| dex.eq(d)),
                             Tag::Preferred(p) => tags.preferred.eq(p),
-                            Tag::Properties(p) => tags.properties.as_ref().is_some_and(|props| props.eq(p)),
-                            Tag::Status(s) => tags.status.as_ref().is_some_and(|status| status.eq(s)),
+                            Tag::Properties(p) => {
+                                tags.properties.as_ref().is_some_and(|props| props.eq(p))
+                            }
+                            Tag::Status(s) => {
+                                tags.status.as_ref().is_some_and(|status| status.eq(s))
+                            }
                         }
                     } else {
                         false

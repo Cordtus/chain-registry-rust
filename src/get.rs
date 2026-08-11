@@ -115,6 +115,60 @@ pub async fn get_path(chain_a: &str, chain_b: &str) -> Result<Option<IBCPath>> {
     }
 }
 
+/// Retrieves the gRPC endpoint addresses for a given chain. The result will contain
+/// `None` if the there is no `chain.json` present.
+///
+/// # Arguments
+///
+/// * `name` - The chain name. Must match the name of the chain's folder in the root directory of the
+///   [chain registry](https://github.com/cosmos/chain-registry).
+pub async fn get_grpc_endpoints(name: &str) -> Result<Option<Vec<String>>> {
+    Ok(get_chain(name).await?.map(|chain| {
+        chain
+            .apis
+            .grpc
+            .into_iter()
+            .map(|endpoint| endpoint.address)
+            .collect()
+    }))
+}
+
+/// Retrieves the REST/LCD endpoint addresses for a given chain. The result will contain
+/// `None` if the there is no `chain.json` present.
+///
+/// # Arguments
+///
+/// * `name` - The chain name. Must match the name of the chain's folder in the root directory of the
+///   [chain registry](https://github.com/cosmos/chain-registry).
+pub async fn get_rest_endpoints(name: &str) -> Result<Option<Vec<String>>> {
+    Ok(get_chain(name).await?.map(|chain| {
+        chain
+            .apis
+            .rest
+            .into_iter()
+            .map(|endpoint| endpoint.address)
+            .collect()
+    }))
+}
+
+/// Retrieves the RPC endpoint addresses for a given chain. The result will contain
+/// `None` if the there is no `chain.json` present.
+///
+/// # Arguments
+///
+/// * `name` - The chain name. Must match the name of the chain's folder in the root directory of the
+///   [chain registry](https://github.com/cosmos/chain-registry).
+pub async fn get_rpc_endpoints(name: &str) -> Result<Option<Vec<String>>> {
+    Ok(get_chain(name).await?.map(|chain| {
+        chain
+            .apis
+            .rpc
+            .into_iter()
+            .map(|endpoint| endpoint.address)
+            .collect()
+    }))
+}
+
 async fn get_file_content(r#ref: &str, path: &str) -> Result<Option<String>> {
     let url = format!("{RAW_FILE_REPO_URL}/{ref}/{path}");
     let response = reqwest::get(url).await?;
@@ -176,7 +230,7 @@ mod tests {
     #[assay]
     async fn lists_paths() {
         let paths = list_paths().await.unwrap();
-        assert!(paths.len() > 0);
+        assert!(!paths.is_empty());
         paths
             .iter()
             .for_each(|path| assert!(!path.ends_with(".json")))

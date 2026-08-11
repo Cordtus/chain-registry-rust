@@ -2,7 +2,7 @@
 name = "cosmos-chain-registry"
 description = "A library for interacting with the Cosmos chain registry repository"
 authors = ["Cosmos Labs"]
-version = "0.4.0"
+version = "0.5.0"
 edition = "2021"
 license = "Apache-2.0"
 documentation = "https://docs.rs/cosmos-chain-registry/latest/cosmos-chain-registry/"
@@ -16,8 +16,8 @@ rustdoc-args = ["--cfg", "docsrs"]
 [dependencies]
 assay = "0.1"
 eyre = "0.6"
-http = "0.2"
-reqwest = "0.11"
+http = "1.0"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 

@@ -31,7 +31,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-cosmos-chain-registry = "0.4.0"
+cosmos-chain-registry = "0.5.0"
 ```
 
 ## Usage
@@ -85,6 +85,27 @@ async fn main() -> eyre::Result<()> {
 
     // Filter by custom tags
     let dex_paths = cache.get_paths_filtered(Tag::Dex("osmosis".to_string())).await?;
+
+    Ok(())
+}
+```
+
+## Endpoint Discovery
+
+Query a chain's node endpoints directly without pulling the full `ChainInfo`:
+
+```rust
+use chain_registry::get::{get_grpc_endpoints, get_rest_endpoints, get_rpc_endpoints};
+
+#[tokio::main]
+async fn main() -> eyre::Result<()> {
+    // gRPC endpoints (address:port, e.g. "osmosis.lavenderfive.com:443")
+    let grpc = get_grpc_endpoints("osmosis").await?.unwrap();
+    println!("gRPC: {:?}", grpc);
+
+    // REST/LCD endpoints
+    let rest = get_rest_endpoints("osmosis").await?.unwrap();
+    println!("REST: {:?}", rest);
 
     Ok(())
 }

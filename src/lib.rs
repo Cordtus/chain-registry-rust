@@ -14,7 +14,7 @@
 //! # Quick Start
 //!
 //! ```no_run
-//! use chain_registry::get::{get_chain, get_assets, get_path, list_chains};
+//! use cosmos_chain_registry::get::{get_chain, get_assets, get_path, list_chains};
 //!
 //! #[tokio::main]
 //! async fn main() -> eyre::Result<()> {

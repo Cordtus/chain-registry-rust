@@ -1,4 +1,4 @@
-#![cfg(all(feature = "cache"))]
+#![cfg(feature = "cache")]
 #![cfg_attr(docsrs, doc(cfg(feature = "cache")))]
 use assay::assay;
 use cosmos_chain_registry::{cache::RegistryCache, paths::Tag};
@@ -26,9 +26,9 @@ async fn registry_cache_happy_path() {
         .await
         .unwrap();
     assert!(!result.is_empty());
-    result
-        .iter()
-        .for_each(|r| assert!(r.channels[0].tags.dex.eq(&dex)));
+    result.iter().for_each(|r| {
+        assert!(r.channels[0].tags.as_ref().and_then(|t| t.dex.as_deref()) == Some(dex.as_str()))
+    });
 
     let preferred = true;
     let result = cache
@@ -38,7 +38,7 @@ async fn registry_cache_happy_path() {
     assert!(!result.is_empty());
     result
         .iter()
-        .for_each(|r| assert!(r.channels[0].tags.preferred.eq(&preferred)));
+        .for_each(|r| assert!(r.channels[0].tags.as_ref().map(|t| t.preferred) == Some(preferred)));
 
     let status = "live".to_string();
     let result = cache
@@ -46,7 +46,13 @@ async fn registry_cache_happy_path() {
         .await
         .unwrap();
     assert!(!result.is_empty());
-    result
-        .iter()
-        .for_each(|r| assert!(r.channels[0].tags.status.eq(&status)));
+    result.iter().for_each(|r| {
+        assert!(
+            r.channels[0]
+                .tags
+                .as_ref()
+                .and_then(|t| t.status.as_deref())
+                == Some(status.as_str())
+        )
+    });
 }
