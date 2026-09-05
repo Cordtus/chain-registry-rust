@@ -17,6 +17,7 @@ This crate is a maintained fork of the original [chain-registry](https://crates.
 - **Complete JSON Support**: Models for serializing/deserializing chain.json, assetlist.json, and IBC path JSON files
 - **Tolerant Deserialization**: Gracefully handles missing or unrecognized JSON fields, ensuring compatibility even as the registry evolves
 - **Simple API**: High-level get/list methods for retrieving chain, asset, and path data
+- **Local Overrides**: Merge additional endpoints or chain information from a local file into existing registry data — useful for infrastructure that cannot be made public
 - **Advanced IBC Path Cache**: Comprehensive filtering and query capabilities for IBC paths:
   - Filter by chain, channel ID, client ID, or custom tags
   - Query paths between specific chains
@@ -31,7 +32,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-cosmos-chain-registry = "0.6.0"
+cosmos-chain-registry = "0.7.0"
 ```
 
 ## Usage
@@ -39,7 +40,7 @@ cosmos-chain-registry = "0.6.0"
 ### Basic Usage
 
 ```rust
-use chain_registry::get::{get_chain, get_assets, get_path, list_chains};
+use cosmos_chain_registry::get::{get_chain, get_assets, get_path, list_chains};
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
@@ -63,10 +64,76 @@ async fn main() -> eyre::Result<()> {
 }
 ```
 
+### Local Overrides
+
+The chain registry only contains public information. To extend a chain with endpoints or other
+data that cannot be made public (for example a private infrastructure provider), provide a local
+overrides file. Overrides only extend an existing chain; they never create a new one.
+
+Create a JSON file, for example `overrides.json`:
+
+```json
+{
+  "secretnetwork": {
+    "grpc": ["grpc.secretnetwork.pathrocknetwork.org:443"],
+    "rest": ["https://api.secretnetwork.pathrocknetwork.org"],
+    "rpc": ["https://rpc.secretnetwork.pathrocknetwork.org"]
+  }
+}
+```
+
+Endpoints may also be written as full objects to include a provider and archive flag:
+
+```json
+{
+  "secretnetwork": {
+    "grpc": [
+      {
+        "address": "grpc.secretnetwork.pathrocknetwork.org:443",
+        "provider": "Pathrock Network",
+        "archive": true
+      }
+    ]
+  }
+}
+```
+
+Load and merge them into the registry data:
+
+```rust
+use cosmos_chain_registry::get::get_chain;
+use cosmos_chain_registry::local::{
+    get_chain_with_overrides, get_grpc_endpoints_with_overrides, LocalOverrides,
+};
+
+#[tokio::main]
+async fn main() -> eyre::Result<()> {
+    let overrides = LocalOverrides::from_file("overrides.json")?;
+
+    // Chain info with local endpoints merged into apis
+    let chain = get_chain_with_overrides("secretnetwork", &overrides)
+        .await?
+        .unwrap();
+    println!("SecretNetwork has {} gRPC endpoints", chain.apis.grpc.len());
+
+    // Endpoint helpers also respect overrides
+    let grpc = get_grpc_endpoints_with_overrides("secretnetwork", &overrides)
+        .await?
+        .unwrap();
+    println!("gRPC with overrides: {grpc:?}");
+
+    // Overrides are never applied to a chain absent from the registry
+    let missing = get_chain_with_overrides("not_a_chain", &overrides).await?;
+    assert!(missing.is_none());
+
+    Ok(())
+}
+```
+
 ### Using the IBC Path Cache
 
 ```rust
-use chain_registry::{cache::RegistryCache, paths::Tag};
+use cosmos_chain_registry::{cache::RegistryCache, paths::Tag};
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
@@ -95,7 +162,7 @@ async fn main() -> eyre::Result<()> {
 Query a chain's node endpoints directly without pulling the full `ChainInfo`:
 
 ```rust
-use chain_registry::get::{get_grpc_endpoints, get_rest_endpoints, get_rpc_endpoints};
+use cosmos_chain_registry::get::{get_grpc_endpoints, get_rest_endpoints, get_rpc_endpoints};
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {

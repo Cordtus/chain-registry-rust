@@ -10,12 +10,15 @@ pub struct IBCPath {
     pub chain_1: Chain1,
     pub chain_2: Chain2,
     pub channels: Vec<Channel>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub operators: Option<Vec<Operator>>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default, rename_all = "snake_case")]
 pub struct Chain1 {
     pub chain_name: String,
+    pub chain_id: String,
     pub client_id: String,
     pub connection_id: String,
 }
@@ -24,6 +27,7 @@ pub struct Chain1 {
 #[serde(default, rename_all = "snake_case")]
 pub struct Chain2 {
     pub chain_name: String,
+    pub chain_id: String,
     pub client_id: String,
     pub connection_id: String,
 }
@@ -46,6 +50,10 @@ pub struct Channel {
 pub struct ChannelChain1 {
     pub channel_id: String,
     pub port_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub client_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub connection_id: Option<String>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -53,6 +61,27 @@ pub struct ChannelChain1 {
 pub struct ChannelChain2 {
     pub channel_id: String,
     pub port_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub client_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub connection_id: Option<String>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default, rename_all = "snake_case")]
+pub struct Operator {
+    pub chain_1: OperatorChain,
+    pub chain_2: OperatorChain,
+    pub memo: String,
+    pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub discord_handle: Option<String>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default, rename_all = "snake_case")]
+pub struct OperatorChain {
+    pub address: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

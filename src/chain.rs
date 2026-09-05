@@ -1,5 +1,6 @@
 #![allow(clippy::derive_partial_eq_without_eq)]
 /// Contains models for serializing and deserializing the `chain.json` in a given chain's directory in the registry repository
+use crate::assets::{Image, LogoURIs};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
@@ -11,30 +12,63 @@ pub struct ChainInfo {
     #[serde(rename = "$schema")]
     pub schema: String,
     pub chain_name: String,
+    pub chain_type: String,
+    pub chain_id: String,
+    pub pre_fork_chain_name: String,
+    pub pretty_name: String,
+    pub website: String,
     pub status: String,
     pub network_type: String,
-    pub pretty_name: String,
-    pub chain_id: String,
     pub bech32_prefix: String,
+    pub bech32_config: Bech32Config,
     pub daemon_name: String,
     pub node_home: String,
+    pub key_algos: Vec<String>,
     pub slip44: u32,
-    pub genesis: Genesis,
-    pub codebase: Codebase,
-    pub peers: Peers,
-    pub apis: Apis,
+    pub alternative_slip44s: Vec<u32>,
     pub fees: Fees,
     pub staking: Staking,
-    pub website: String,
-    pub update_link: String,
-    pub key_algos: Vec<String>,
+    pub codebase: Codebase,
+    pub images: Vec<Image>,
+    pub logo_uris: LogoURIs,
+    pub description: String,
+    pub peers: Peers,
+    pub apis: Apis,
+    pub snapshots: Vec<Snapshot>,
     pub explorers: Vec<Explorer>,
+    pub keywords: Vec<String>,
+    pub extra_codecs: Vec<String>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(default)]
-pub struct Genesis {
-    pub genesis_url: String,
+pub struct Bech32Config {
+    #[serde(rename = "bech32PrefixAccAddr")]
+    pub acc_addr: String,
+    #[serde(rename = "bech32PrefixAccPub")]
+    pub acc_pub: String,
+    #[serde(rename = "bech32PrefixConsAddr")]
+    pub cons_addr: String,
+    #[serde(rename = "bech32PrefixConsPub")]
+    pub cons_pub: String,
+    #[serde(rename = "bech32PrefixValAddr")]
+    pub val_addr: String,
+    #[serde(rename = "bech32PrefixValPub")]
+    pub val_pub: String,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[serde(default)]
+pub struct Snapshot {
+    pub provider: String,
+    pub url: String,
+    pub latest_url: String,
+    #[serde(rename = "type")]
+    pub r#type: String,
+    pub db_backend: String,
+    pub frequency: String,
+    pub compression: String,
+    pub checksum_available: Option<bool>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
@@ -44,11 +78,74 @@ pub struct Codebase {
     pub recommended_version: String,
     #[serde(skip_serializing_if = "Vec::is_empty", default = "Vec::new")]
     pub compatible_versions: Vec<String>,
+    pub tag: String,
+    pub language: Option<Language>,
     pub binaries: Binaries,
-    pub cosmos_sdk_version: String,
-    pub tendermint_version: String,
-    pub cosmwasm_version: String,
-    pub cosmwasm_enabled: bool,
+    pub sdk: Option<Sdk>,
+    pub consensus: Option<Consensus>,
+    pub cosmwasm: Option<Cosmwasm>,
+    pub ibc: Option<Ibc>,
+    pub genesis: Option<Genesis>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[serde(default)]
+pub struct Genesis {
+    pub name: String,
+    pub genesis_url: String,
+    pub ics_ccv_url: String,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[serde(default)]
+pub struct Sdk {
+    #[serde(rename = "type")]
+    pub r#type: String,
+    pub version: String,
+    pub repo: String,
+    pub tag: String,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[serde(default)]
+pub struct Consensus {
+    #[serde(rename = "type")]
+    pub r#type: String,
+    pub version: String,
+    pub repo: String,
+    pub tag: String,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[serde(default)]
+pub struct Language {
+    #[serde(rename = "type")]
+    pub r#type: String,
+    pub version: String,
+    pub repo: String,
+    pub tag: String,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[serde(default)]
+pub struct Cosmwasm {
+    pub version: String,
+    pub repo: String,
+    pub tag: String,
+    pub enabled: Option<bool>,
+    pub path: String,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[serde(default)]
+pub struct Ibc {
+    #[serde(rename = "type")]
+    pub r#type: String,
+    pub version: String,
+    pub repo: String,
+    pub tag: String,
+    #[serde(skip_serializing_if = "Vec::is_empty", default = "Vec::new")]
+    pub ics_enabled: Vec<String>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
@@ -64,6 +161,8 @@ pub struct Binaries {
     pub darwin_arm_64: String,
     #[serde(rename = "windows/amd64")]
     pub windows_amd_64: String,
+    #[serde(rename = "windows/arm64")]
+    pub windows_arm_64: String,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
@@ -83,9 +182,11 @@ pub struct Seed {
 }
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[serde(default)]
 pub struct PersistentPeer {
     pub id: String,
     pub address: String,
+    pub provider: Option<String>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
@@ -103,6 +204,7 @@ pub struct Apis {
 pub struct Rpc {
     pub address: String,
     pub provider: Option<String>,
+    pub archive: Option<bool>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
@@ -110,6 +212,7 @@ pub struct Rpc {
 pub struct Rest {
     pub address: String,
     pub provider: Option<String>,
+    pub archive: Option<bool>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
@@ -117,6 +220,7 @@ pub struct Rest {
 pub struct Grpc {
     pub address: String,
     pub provider: Option<String>,
+    pub archive: Option<bool>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
@@ -134,6 +238,14 @@ pub struct FeeToken {
     pub low_gas_price: f32,
     pub average_gas_price: f32,
     pub high_gas_price: f32,
+    pub gas_costs: GasCosts,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[serde(default)]
+pub struct GasCosts {
+    pub cosmos_send: i64,
+    pub ibc_transfer: i64,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
@@ -156,4 +268,7 @@ pub struct Explorer {
     pub url: String,
     pub tx_page: String,
     pub account_page: String,
+    pub validator_page: String,
+    pub proposal_page: String,
+    pub block_page: String,
 }

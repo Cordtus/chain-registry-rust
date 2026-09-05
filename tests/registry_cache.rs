@@ -19,40 +19,29 @@ async fn registry_cache_happy_path() {
     assert_eq!(result.chain_1.chain_name, "cosmoshub");
     assert_eq!(result.chain_2.chain_name, "osmosis");
 
-    // filter by tag values known to be present in at least one chain
-    let dex = "osmosis".to_string();
-    let result = cache
-        .get_paths_filtered(Tag::Dex(dex.clone()))
-        .await
-        .unwrap();
-    assert!(!result.is_empty());
-    result.iter().for_each(|r| {
-        assert!(r.channels[0].tags.as_ref().and_then(|t| t.dex.as_deref()) == Some(dex.as_str()))
-    });
-
+    // filter by tag values known to be present in the current registry
     let preferred = true;
     let result = cache
         .get_paths_filtered(Tag::Preferred(preferred))
         .await
         .unwrap();
     assert!(!result.is_empty());
-    result
-        .iter()
-        .for_each(|r| assert!(r.channels[0].tags.as_ref().map(|t| t.preferred) == Some(preferred)));
+    result.iter().for_each(|r| {
+        assert!(r
+            .channels
+            .iter()
+            .any(|chan| chan.tags.as_ref().map(|t| t.preferred) == Some(preferred)));
+    });
 
-    let status = "live".to_string();
+    let status = "ACTIVE".to_string();
     let result = cache
         .get_paths_filtered(Tag::Status(status.clone()))
         .await
         .unwrap();
     assert!(!result.is_empty());
     result.iter().for_each(|r| {
-        assert!(
-            r.channels[0]
-                .tags
-                .as_ref()
-                .and_then(|t| t.status.as_deref())
-                == Some(status.as_str())
-        )
+        assert!(r.channels.iter().any(|chan| {
+            chan.tags.as_ref().and_then(|t| t.status.as_deref()) == Some(status.as_str())
+        }));
     });
 }

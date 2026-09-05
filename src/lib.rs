@@ -9,6 +9,7 @@
 //! * Tolerant deserialization that gracefully handles missing or unrecognized fields
 //! * Cache type with comprehensive filtering options for IBC paths
 //! * Simple get/list methods for chains, assets, and paths
+//! * Local overrides to extend registry data with endpoints that cannot be made public
 //! * Always fetches from master branch for latest registry data
 //!
 //! # Quick Start
@@ -47,6 +48,9 @@ pub mod cache;
 /// API for getting and listing data from the registry Github repo
 pub mod get;
 pub mod github;
+
+/// Support for extending registry data with additional local information
+pub mod local;
 
 /// Models for IBC path JSON ser/de
 pub mod paths;

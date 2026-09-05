@@ -1,26 +1,69 @@
-# 0.6.0
+# Changelog
 
-- Add `get_grpc_endpoints`, `get_rest_endpoints`, and `get_rpc_endpoints` helpers for direct endpoint discovery
-- Modernize dependencies: `reqwest` 0.11 -> 0.12 (rustls), `http` 0.2 -> 1.0
-- Fix integration tests for current registry schema (ordered channels, `Option` fields, `ACTIVE` tag status)
+All notable changes to this project are documented in this file.
 
-# 0.5.0
+## [0.7.0] - 2026-09-05
 
-- Update chain-registry git ref to latest (e458ac19d3428e35f8b2ba634eb01ae1d359b46a - 2025-08-19)
-- Fix error handling: nonexistent chains/paths now return `None` instead of errors
-- Remove debug output from parse_json
-- Add comprehensive integration tests
-- Add tokio as dev dependency for examples
+### Added
 
-# 0.2.0-rc3
+- `local` module: load additional endpoints (gRPC, REST, RPC) from a local JSON file and merge them into an existing chain's data. This supports endpoints that cannot be made public in the registry. Overrides only extend existing chains; they never create new ones. See `LocalOverrides`, `get_chain_with_overrides`, `get_grpc_endpoints_with_overrides`, `get_rest_endpoints_with_overrides`, and `get_rpc_endpoints_with_overrides`.
+- `ChainInfo`: added `chain_type`, `pre_fork_chain_name`, `bech32_config`, `alternative_slip44s`, `images`, `logo_URIs`, `description`, `snapshots`, `keywords`, and `extra_codecs`.
+- `Codebase`: added nested `sdk`, `consensus`, `cosmwasm`, `ibc`, `language`, `tag`, and `genesis` models to match the current `chain.schema.json`.
+- `Binaries`: added `windows/arm64`.
+- `PersistentPeer`: added optional `provider`.
+- `Rpc`, `Rest`, `Grpc`: added optional `archive` flag.
+- `Explorer`: added `validator_page`, `proposal_page`, and `block_page`.
+- `FeeToken`: added `gas_costs`.
+- `AssetList`: added `$schema`.
+- `Asset`: added `deprecated`, `extended_description`, `type_asset`, `address`, `traces`, `ibc`, `images`, `keywords`, and `socials`. `type_asset` is now represented (it is a required field in the current schema).
+- `DenomUnit`: added `aliases`.
+- `IBCPath`: added `operators`; `Chain1`/`Chain2` gained `chain_id`; channel-level `client_id` and `connection_id` are now deserialized.
 
-- Remove `deny_unknown_fields` serde directive
+### Changed
 
-# 0.2.0-rc2
+- `ChainInfo` no longer has a top-level `genesis` or `update_link`; genesis moved into `codebase.genesis` per the current schema.
+- Removed the obsolete flat `cosmos_sdk_version`, `tendermint_version`, `cosmwasm_version`, and `cosmwasm_enabled` fields from `Codebase`; replaced by the nested `sdk`, `consensus`, `cosmwasm`, and `ibc` models.
+- `DenomUnit.exponent` is now `i32` to tolerate negative exponents.
 
-- Add missing fields to chain model
+### Fixed
 
-# 0.2.0-rc1
+- All `chain.json`, `assetlist.json`, and `_IBC/*.json` files in the current registry now deserialize cleanly.
+- `registry_cache` tests updated for the current registry (the registry no longer emits `dex` tags and now uses `ACTIVE`/`INACTIVE` status).
+- Cache tag assertions now check any channel rather than only the first channel.
 
-- Improve docs by adding examples on the front page
-- Support commit 350840e766f7574a120760a13eda4c466413308a
+## [0.6.0] - 2026-08-11
+
+Release of the endpoint discovery helpers staged in 0.5.0.
+
+- `get_grpc_endpoints`, `get_rest_endpoints`, and `get_rpc_endpoints` helpers for direct endpoint discovery.
+- Modernize dependencies: `reqwest` 0.11 -> 0.12 (rustls), `http` 0.2 -> 1.0.
+- Fix integration tests for current registry schema (ordered channels, `Option` fields, `ACTIVE` tag status).
+
+## [0.5.0] - 2026-08-11
+
+- Add endpoint discovery helpers: `get_grpc_endpoints`, `get_rest_endpoints`, and `get_rpc_endpoints`.
+- Modernize dependencies: `reqwest` 0.11 -> 0.12 (rustls), `http` 0.2 -> 1.0.
+- Fix integration tests for current registry schema (ordered channels, `Option` fields, `ACTIVE` tag status).
+- Update README and crate docs for the `cosmos_chain_registry` import path.
+
+## [0.4.0] - 2025-09-24
+
+- Add comprehensive IBC path cache filtering: `get_paths_for_chain`, `get_all_paths`, `get_paths_by_channel`, and `get_paths_by_client`.
+- Improve tag filtering to handle optional tags.
+- Tolerant deserialization for optional/missing fields.
+- Re-export common types (`AssetList`, `ChainInfo`, `IBCPath`, `RegistryCache`) at the crate root.
+- Update documentation with features list and usage examples.
+- Fix clippy warnings.
+
+## [0.2.0-rc3]
+
+- Remove `deny_unknown_fields` serde directive.
+
+## [0.2.0-rc2]
+
+- Add missing fields to chain model.
+
+## [0.2.0-rc1]
+
+- Improve docs by adding examples on the front page.
+- Support commit 350840e766f7574a120760a13eda4c466413308a.

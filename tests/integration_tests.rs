@@ -1,5 +1,7 @@
 use cosmos_chain_registry::cache::RegistryCache;
 use cosmos_chain_registry::get::*;
+use cosmos_chain_registry::local::LocalOverrides;
+use cosmos_chain_registry::local::{get_chain_with_overrides, get_grpc_endpoints_with_overrides};
 use cosmos_chain_registry::paths::Tag;
 
 #[tokio::test]
@@ -157,6 +159,116 @@ async fn test_get_path_reverse_order() {
 }
 
 #[tokio::test]
+async fn test_local_overrides_merge() {
+    let overrides = LocalOverrides::parse(
+        r#"{
+            "secretnetwork": {
+                "grpc": ["grpc.secretnetwork.pathrocknetwork.org:443"],
+                "rest": ["https://api.secretnetwork.pathrocknetwork.org"],
+                "rpc": ["https://rpc.secretnetwork.pathrocknetwork.org"]
+            }
+        }"#,
+    )
+    .expect("Failed to parse overrides");
+
+    let chain = get_chain_with_overrides("secretnetwork", &overrides)
+        .await
+        .expect("Failed to get chain with overrides")
+        .expect("SecretNetwork should exist");
+
+    assert_eq!(chain.chain_name, "secretnetwork");
+    assert_eq!(chain.chain_id, "secret-4");
+    assert!(
+        chain
+            .apis
+            .grpc
+            .iter()
+            .any(|e| e.address == "grpc.secretnetwork.pathrocknetwork.org:443"),
+        "Should include the local gRPC endpoint"
+    );
+    assert!(
+        chain
+            .apis
+            .rest
+            .iter()
+            .any(|e| e.address == "https://api.secretnetwork.pathrocknetwork.org"),
+        "Should include the local REST endpoint"
+    );
+    assert!(
+        chain
+            .apis
+            .rpc
+            .iter()
+            .any(|e| e.address == "https://rpc.secretnetwork.pathrocknetwork.org"),
+        "Should include the local RPC endpoint"
+    );
+
+    let grpc = get_grpc_endpoints_with_overrides("secretnetwork", &overrides)
+        .await
+        .expect("Failed to get gRPC endpoints")
+        .expect("SecretNetwork should have endpoints");
+    assert!(
+        grpc.contains(&"grpc.secretnetwork.pathrocknetwork.org:443".to_string()),
+        "gRPC helper should include local endpoint"
+    );
+}
+
+#[tokio::test]
+async fn test_local_overrides_deduplicates() {
+    let overrides = LocalOverrides::parse(
+        r#"{
+            "secretnetwork": {
+                "grpc": ["secretnetwork.lavenderfive.com:443", "grpc.secretnetwork.pathrocknetwork.org:443"],
+                "rest": ["https://rest.lavenderfive.com:443/secretnetwork"],
+                "rpc": []
+            }
+        }"#,
+    )
+    .expect("Failed to parse overrides");
+
+    let chain = get_chain_with_overrides("secretnetwork", &overrides)
+        .await
+        .expect("Failed to get chain with overrides")
+        .expect("SecretNetwork should exist");
+
+    let lavender = chain
+        .apis
+        .grpc
+        .iter()
+        .filter(|e| e.address == "secretnetwork.lavenderfive.com:443")
+        .count();
+    assert_eq!(lavender, 1, "Duplicate endpoints should be de-duplicated");
+
+    let pathrock = chain
+        .apis
+        .grpc
+        .iter()
+        .filter(|e| e.address == "grpc.secretnetwork.pathrocknetwork.org:443")
+        .count();
+    assert_eq!(pathrock, 1, "New endpoint should be added exactly once");
+}
+
+#[tokio::test]
+async fn test_local_overrides_nonexistent_chain() {
+    let overrides = LocalOverrides::parse(
+        r#"{
+            "nonexistent_chain_xyz": {
+                "rpc": ["https://rpc.example.com"]
+            }
+        }"#,
+    )
+    .expect("Failed to parse overrides");
+
+    let chain = get_chain_with_overrides("nonexistent_chain_xyz", &overrides)
+        .await
+        .expect("Should not error on nonexistent chain");
+    assert!(
+        chain.is_none(),
+        "Overrides should not create a new chain for a chain absent from the registry"
+    );
+}
+
+#[tokio::test]
 async fn test_get_nonexistent_chain() {
     let chain = get_chain("nonexistent_chain_xyz")
         .await
@@ -192,17 +304,6 @@ async fn test_registry_cache() {
     assert_eq!(path.chain_1.chain_name, "cosmoshub");
     assert_eq!(path.chain_2.chain_name, "osmosis");
 
-    // Test filtering by dex tag
-    let dex_paths = cache
-        .get_paths_filtered(Tag::Dex("osmosis".to_string()))
-        .await
-        .expect("Failed to filter paths");
-
-    assert!(
-        !dex_paths.is_empty(),
-        "Should have paths with osmosis dex tag"
-    );
-
     // Test filtering by preferred tag
     let preferred_paths = cache
         .get_paths_filtered(Tag::Preferred(true))
@@ -213,11 +314,11 @@ async fn test_registry_cache() {
 
     // Test filtering by status
     let live_paths = cache
-        .get_paths_filtered(Tag::Status("live".to_string()))
+        .get_paths_filtered(Tag::Status("ACTIVE".to_string()))
         .await
         .expect("Failed to filter paths");
 
-    assert!(!live_paths.is_empty(), "Should have live paths");
+    assert!(!live_paths.is_empty(), "Should have ACTIVE paths");
 }
 
 #[tokio::test]
