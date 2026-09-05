@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.7.1] - 2026-09-05
+
+### Added
+
+- `Apis`: added `wss`, `grpc_web`, and `evm_http_jsonrpc` endpoint lists (with `Wss`, `GrpcWeb`, and `EvmRpc` models) to match the current `chain.schema.json`.
+- `get_evm_rpc_endpoints` helper for direct EVM JSON-RPC endpoint discovery.
+- `get_evm_rpc_endpoints_with_overrides` helper for EVM endpoints merged from a local overrides file.
+- `ChainOverrides` now also accepts `wss`, `grpc_web`, and `evm_http_jsonrpc` endpoints for local merging.
+
 ## [0.7.0] - 2026-09-05
 
 ### Added

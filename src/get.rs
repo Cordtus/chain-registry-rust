@@ -169,6 +169,24 @@ pub async fn get_rpc_endpoints(name: &str) -> Result<Option<Vec<String>>> {
     }))
 }
 
+/// Retrieves the EVM JSON-RPC endpoint addresses for a given chain. The result will contain
+/// `None` if the there is no `chain.json` present.
+///
+/// # Arguments
+///
+/// * `name` - The chain name. Must match the name of the chain's folder in the root directory of the
+///   [chain registry](https://github.com/cosmos/chain-registry).
+pub async fn get_evm_rpc_endpoints(name: &str) -> Result<Option<Vec<String>>> {
+    Ok(get_chain(name).await?.map(|chain| {
+        chain
+            .apis
+            .evm_http_jsonrpc
+            .into_iter()
+            .map(|endpoint| endpoint.address)
+            .collect()
+    }))
+}
+
 async fn get_file_content(r#ref: &str, path: &str) -> Result<Option<String>> {
     let url = format!("{RAW_FILE_REPO_URL}/{ref}/{path}");
     let response = reqwest::get(url).await?;

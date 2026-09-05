@@ -159,6 +159,17 @@ async fn test_get_path_reverse_order() {
 }
 
 #[tokio::test]
+async fn test_get_evm_rpc_endpoints() {
+    // acre (an EVM chain) should expose evm-http-jsonrpc endpoints
+    let evm = get_evm_rpc_endpoints("acre")
+        .await
+        .expect("Failed to get EVM RPC endpoints");
+    if let Some(endpoints) = evm {
+        assert!(!endpoints.is_empty(), "Acre should have EVM endpoints");
+    }
+}
+
+#[tokio::test]
 async fn test_local_overrides_merge() {
     let overrides = LocalOverrides::parse(
         r#"{

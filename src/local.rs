@@ -4,7 +4,7 @@
 /// Data is read from a local JSON file keyed by chain name. Overrides only ever
 /// extend an existing chain's information; they never create new chains.
 use crate::{
-    chain::{ChainInfo, Grpc, Rest, Rpc},
+    chain::{ChainInfo, EvmRpc, Grpc, GrpcWeb, Rest, Rpc, Wss},
     get::get_chain,
 };
 use eyre::{Result, WrapErr};
@@ -18,6 +18,9 @@ pub struct ChainOverrides {
     pub grpc: Vec<EndpointValue>,
     pub rest: Vec<EndpointValue>,
     pub rpc: Vec<EndpointValue>,
+    pub wss: Vec<EndpointValue>,
+    pub grpc_web: Vec<EndpointValue>,
+    pub evm_http_jsonrpc: Vec<EndpointValue>,
 }
 
 /// An endpoint value, written either as a bare address string or a full object
@@ -46,7 +49,10 @@ pub struct Endpoint {
 ///   "secretnetwork": {
 ///     "grpc": ["grpc.secretnetwork.pathrocknetwork.org:443"],
 ///     "rest": ["https://api.secretnetwork.pathrocknetwork.org"],
-///     "rpc": ["https://rpc.secretnetwork.pathrocknetwork.org"]
+///     "rpc": ["https://rpc.secretnetwork.pathrocknetwork.org"],
+///     "wss": ["wss://ws.secretnetwork.example"],
+///     "grpc_web": ["https://grpc-web.secretnetwork.example"],
+///     "evm_http_jsonrpc": ["https://evm.secretnetwork.example"]
 ///   }
 /// }
 /// ```
@@ -96,6 +102,39 @@ impl From<&EndpointValue> for Rpc {
     fn from(value: &EndpointValue) -> Self {
         let (address, provider, archive) = endpoint_parts(value);
         Rpc {
+            address,
+            provider,
+            archive,
+        }
+    }
+}
+
+impl From<&EndpointValue> for Wss {
+    fn from(value: &EndpointValue) -> Self {
+        let (address, provider, archive) = endpoint_parts(value);
+        Wss {
+            address,
+            provider,
+            archive,
+        }
+    }
+}
+
+impl From<&EndpointValue> for GrpcWeb {
+    fn from(value: &EndpointValue) -> Self {
+        let (address, provider, archive) = endpoint_parts(value);
+        GrpcWeb {
+            address,
+            provider,
+            archive,
+        }
+    }
+}
+
+impl From<&EndpointValue> for EvmRpc {
+    fn from(value: &EndpointValue) -> Self {
+        let (address, provider, archive) = endpoint_parts(value);
+        EvmRpc {
             address,
             provider,
             archive,
@@ -166,6 +205,39 @@ pub async fn get_chain_with_overrides(
             chain.apis.rpc.push(endpoint);
         }
     }
+    for value in &chain_overrides.wss {
+        let endpoint = Wss::from(value);
+        if !chain
+            .apis
+            .wss
+            .iter()
+            .any(|existing| existing.address == endpoint.address)
+        {
+            chain.apis.wss.push(endpoint);
+        }
+    }
+    for value in &chain_overrides.grpc_web {
+        let endpoint = GrpcWeb::from(value);
+        if !chain
+            .apis
+            .grpc_web
+            .iter()
+            .any(|existing| existing.address == endpoint.address)
+        {
+            chain.apis.grpc_web.push(endpoint);
+        }
+    }
+    for value in &chain_overrides.evm_http_jsonrpc {
+        let endpoint = EvmRpc::from(value);
+        if !chain
+            .apis
+            .evm_http_jsonrpc
+            .iter()
+            .any(|existing| existing.address == endpoint.address)
+        {
+            chain.apis.evm_http_jsonrpc.push(endpoint);
+        }
+    }
 
     Ok(Some(chain))
 }
@@ -218,6 +290,24 @@ pub async fn get_rpc_endpoints_with_overrides(
             chain
                 .apis
                 .rpc
+                .into_iter()
+                .map(|endpoint| endpoint.address)
+                .collect()
+        }))
+}
+
+/// Retrieves the EVM JSON-RPC endpoint addresses for a chain, extended with any
+/// additional endpoints from the local overrides file.
+pub async fn get_evm_rpc_endpoints_with_overrides(
+    name: &str,
+    overrides: &LocalOverrides,
+) -> Result<Option<Vec<String>>> {
+    Ok(get_chain_with_overrides(name, overrides)
+        .await?
+        .map(|chain| {
+            chain
+                .apis
+                .evm_http_jsonrpc
                 .into_iter()
                 .map(|endpoint| endpoint.address)
                 .collect()

@@ -197,6 +197,24 @@ pub struct Apis {
     #[serde(skip_serializing_if = "Vec::is_empty", default = "Vec::new")]
     pub rest: Vec<Rest>,
     pub grpc: Vec<Grpc>,
+    #[serde(
+        rename = "wss",
+        skip_serializing_if = "Vec::is_empty",
+        default = "Vec::new"
+    )]
+    pub wss: Vec<Wss>,
+    #[serde(
+        rename = "grpc-web",
+        skip_serializing_if = "Vec::is_empty",
+        default = "Vec::new"
+    )]
+    pub grpc_web: Vec<GrpcWeb>,
+    #[serde(
+        rename = "evm-http-jsonrpc",
+        skip_serializing_if = "Vec::is_empty",
+        default = "Vec::new"
+    )]
+    pub evm_http_jsonrpc: Vec<EvmRpc>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
@@ -218,6 +236,30 @@ pub struct Rest {
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(default)]
 pub struct Grpc {
+    pub address: String,
+    pub provider: Option<String>,
+    pub archive: Option<bool>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[serde(default)]
+pub struct Wss {
+    pub address: String,
+    pub provider: Option<String>,
+    pub archive: Option<bool>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[serde(default)]
+pub struct GrpcWeb {
+    pub address: String,
+    pub provider: Option<String>,
+    pub archive: Option<bool>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[serde(default)]
+pub struct EvmRpc {
     pub address: String,
     pub provider: Option<String>,
     pub archive: Option<bool>,
