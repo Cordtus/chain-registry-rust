@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.7.2] - 2026-10-09
+
+### Added
+
+- `RegistryClient`: a client for the chain registry that can authenticate GitHub requests with an optional token. Construct it with `RegistryClient::with_token(...)`, `RegistryClient::new()` (reads `CHAIN_REGISTRY_GITHUB_TOKEN`), or `RegistryClient::anonymous()`. All `get`/`list` helpers are available as methods and attach `Authorization: Bearer <token>` to `api.github.com` requests. `Debug` redacts the token.
+- `RegistryCache::try_new_with_client(&RegistryClient)` for building the path cache with a caller-supplied token.
+
+### Changed
+
+- The existing free functions (`get_chain`, `list_chains`, `get_path`, ...) now delegate to `RegistryClient::new()`, so a token set in `CHAIN_REGISTRY_GITHUB_TOKEN` is picked up automatically without code changes. Non-success GitHub responses now return an error that distinguishes auth failures instead of a parse error or a silent `None`.
+
 ## [0.7.1] - 2026-09-05
 
 ### Added

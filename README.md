@@ -32,8 +32,35 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-cosmos-chain-registry = "0.7.0"
+cosmos-chain-registry = "0.7"
 ```
+
+## GitHub Tokens
+
+GitHub's unauthenticated API allows only 60 requests per hour, which the `list_*` helpers and the
+path-cache constructor can exhaust. Raise the limit to 5,000 requests per hour with a token that has
+read access to repository contents, either through the environment or explicitly:
+
+```rust
+use cosmos_chain_registry::RegistryClient;
+
+#[tokio::main]
+async fn main() -> eyre::Result<()> {
+    // Explicit token for this client.
+    let client = RegistryClient::with_token(std::env::var("MY_GITHUB_TOKEN")?);
+    let chains = client.list_chains().await?;
+    let osmosis = client.get_chain("osmosis").await?;
+
+    // Or rely on CHAIN_REGISTRY_GITHUB_TOKEN being set:
+    let client = RegistryClient::new();
+    let paths = client.list_paths().await?;
+
+    Ok(())
+}
+```
+
+The free functions (`get_chain`, `list_chains`, `get_path`, ...) use the environment token
+automatically, so existing code needs no changes.
 
 ## Usage
 
@@ -139,6 +166,9 @@ use cosmos_chain_registry::{cache::RegistryCache, paths::Tag};
 async fn main() -> eyre::Result<()> {
     // Build the cache (fetches all IBC paths - may take a moment)
     let cache = RegistryCache::try_new().await?;
+
+    // Or build it with an explicit token for the per-path requests:
+    // let cache = RegistryCache::try_new_with_client(&RegistryClient::with_token("ghp_example")).await?;
 
     // Get path between specific chains
     let path = cache.get_path("osmosis", "cosmoshub").await?.unwrap();

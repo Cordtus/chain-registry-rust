@@ -9,6 +9,7 @@
 //! * Tolerant deserialization that gracefully handles missing or unrecognized fields
 //! * Cache type with comprehensive filtering options for IBC paths
 //! * Simple get/list methods for chains, assets, and paths
+//! * Optional GitHub token support for higher API rate limits
 //! * Local overrides to extend registry data with endpoints that cannot be made public
 //! * Always fetches from master branch for latest registry data
 //!
@@ -34,6 +35,21 @@
 //!     Ok(())
 //! }
 //! ```
+//!
+//! # GitHub Tokens
+//!
+//! The free functions read a token from `CHAIN_REGISTRY_GITHUB_TOKEN`. To pass
+//! a token explicitly, use [`RegistryClient::with_token`]:
+//!
+//! ```no_run
+//! use cosmos_chain_registry::RegistryClient;
+//!
+//! # async fn run() -> eyre::Result<()> {
+//! let client = RegistryClient::with_token("ghp_example");
+//! let chains = client.list_chains().await?;
+//! # Ok(())
+//! # }
+//! ```
 
 /// Models for assets.json ser/de
 pub mod assets;
@@ -58,6 +74,7 @@ pub mod paths;
 // Re-export commonly used types at crate root
 pub use assets::AssetList;
 pub use chain::ChainInfo;
+pub use get::RegistryClient;
 pub use paths::IBCPath;
 
 #[cfg(feature = "cache")]

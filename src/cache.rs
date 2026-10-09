@@ -126,7 +126,13 @@ impl RegistryCache {
 
     /// Creates a new cache by retrieving and deserializing each [`IBCPath`] from the Cosmos Chain Registry for easy filtering
     pub async fn try_new() -> Result<RegistryCache> {
-        let path_names = list_paths().await?;
+        Self::try_new_with_client(&RegistryClient::new()).await
+    }
+
+    /// Creates a new cache using a caller-provided [`RegistryClient`], so a GitHub token can be
+    /// supplied for the per-path requests.
+    pub async fn try_new_with_client(client: &RegistryClient) -> Result<RegistryCache> {
+        let path_names = client.list_paths().await?;
         let mut paths = HashMap::<String, IBCPath>::default();
 
         for pn in path_names {
@@ -136,7 +142,10 @@ impl RegistryCache {
             // retrieved earlier, therefore the Option returned should never be None.
             paths.insert(
                 pn.clone(),
-                get_path(cn[0], cn[1]).await?.expect("path returned None"),
+                client
+                    .get_path(cn[0], cn[1])
+                    .await?
+                    .expect("path returned None"),
             );
         }
 
